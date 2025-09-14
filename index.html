@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🌍📚 Multi-Language Learning TTS (3 Languages)</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .container {
+            background: rgba(255,255,255,0.95);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            color: #333;
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            padding: 30px;
+            text-align: center;
+            border-radius: 10px;
+            margin: 20px 0;
+            background: #fafafa;
+            cursor: pointer;
+        }
+        .upload-area.dragover {
+            border-color: #007cba;
+            background: #f0f8ff;
+        }
+        .column-config {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 2px solid #e9ecef;
+        }
+        .column-row {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            gap: 15px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+        }
+        .column-preview {
+            background: #e3f2fd;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-weight: bold;
+            min-width: 120px;
+            font-family: monospace;
+        }
+        .word-display {
+            text-align: center;
+            padding: 30px;
+            margin: 20px 0;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 10px;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .word-1 {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 10px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .word-2 {
+            font-size: 1.5em;
+            opacity: 0.9;
+            margin: 10px 0;
+        }
+        .word-3 {
+            font-size: 1.2em;
+            opacity: 0.8;
+            margin: 10px 0;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        button {
+            background: #007cba;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        button:hover { background: #005a8b; transform: translateY(-2px); }
+        button:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+        button.start-btn {
+            background: #28a745;
+            font-size: 18px;
+            padding: 15px 30px;
+        }
+        button.start-btn:hover { background: #218838; }
+        .progress {
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        .progress-bar {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            height: 8px;
+            transition: width 0.3s ease;
+        }
+        .settings {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .setting-row {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            gap: 15px;
+        }
+        select, input[type="range"], input[type="number"] {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            min-width: 200px;
+        }
+        .word-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .word-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .word-item:hover { background: #f5f5f5; }
+        .word-item.current { background: #e3f2fd; font-weight: bold; }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-number { font-size: 1.8em; font-weight: bold; color: #007cba; }
+        .hidden { display: none; }
+        .csv-preview {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid #dee2e6;
+        }
+        .csv-preview table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .csv-preview th, .csv-preview td {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        .csv-preview th {
+            background: #e9ecef;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🌍📚 Multi-Language Learning TTS</h1>
+    <p><strong>NEW:</strong> Now supports up to 3 languages! Upload CSV with up to 3 columns.</p>
+
+    <!-- File Upload -->
+    <div class="upload-area" id="uploadArea">
+        <input type="file" id="csvFile" accept=".csv" style="display: none;">
+        <p>📄 <strong>Click here or drag & drop your CSV file</strong></p>
+        <p style="font-size: 0.9em; color: #666;">CSV format with 2-3 language columns</p>
+    </div>
+
+    <!-- CSV Preview -->
+    <div class="csv-preview hidden" id="csvPreview">
+        <h3>📋 CSV Preview</h3>
+        <div id="previewTable"></div>
+    </div>
+
+    <!-- Column Configuration -->
+    <div class="column-config hidden" id="columnConfig">
+        <h3>🎯 Language Configuration</h3>
+        <p>Assign languages to each column, then click Start Learning:</p>
+        <div id="columnMappings"></div>
+        <div style="text-align: center; margin-top: 25px;">
+            <button class="start-btn" onclick="startConfiguration()" id="startConfigBtn">🚀 Start Learning</button>
+        </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="settings hidden" id="settingsPanel">
+        <h3>🎛️ Settings</h3>
+        <div class="setting-row">
+            <label><strong>Speech Rate:</strong></label>
+            <input type="range" id="speechRate" min="0.5" max="2" value="0.8" step="0.1">
+            <span id="rateDisplay">0.8x</span>
+        </div>
+        <div class="setting-row">
+            <label><strong>Pause between words:</strong></label>
+            <input type="number" id="pauseTime" value="2000" min="500" max="10000" step="500">
+            <span>ms</span>
+        </div>
+    </div>
+
+    <!-- Word Display - NOW WITH 3 WORDS -->
+    <div class="word-display hidden" id="wordDisplay">
+        <div class="word-1" id="currentWord1">Word 1</div>
+        <div class="word-2" id="currentWord2">Word 2</div>
+        <div class="word-3" id="currentWord3">Word 3</div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress hidden" id="progressContainer">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls hidden" id="controls">
+        <button onclick="startLearning()" id="startBtn">▶️ Start</button>
+        <button onclick="pauseLearning()" id="pauseBtn" disabled>⏸️ Pause</button>
+        <button onclick="stopLearning()" id="stopBtn" disabled>⏹️ Stop</button>
+        <button onclick="nextWord()" id="nextBtn" disabled>⏭️ Next</button>
+        <button onclick="previousWord()" id="prevBtn" disabled>⏮️ Previous</button>
+        <button onclick="toggleRepeat()" id="repeatBtn">🔁 Repeat: OFF</button>
+    </div>
+
+    <!-- Statistics -->
+    <div class="stats hidden" id="stats">
+        <div class="stat-card">
+            <div class="stat-number" id="totalWords">0</div>
+            <div>Total Words</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="currentIndex">0</div>
+            <div>Current Word</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="wordsRemaining">0</div>
+            <div>Remaining</div>
+        </div>
+    </div>
+
+    <!-- Word List -->
+    <div class="word-list hidden" id="wordList"></div>
+</div>
+
+<script>
+    let csvData = [];
+    let wordPairs = [];
+    let currentIndex = 0;
+    let isPlaying = false;
+    let isPaused = false;
+    let repeatMode = false;
+    let columnCount = 0;
+    let languageAssignments = {};
+
+    // Language options with their codes
+    const languages = {
+        'auto': 'Auto-detect',
+        'en-US': 'English (US)',
+        'en-GB': 'English (UK)',
+        'ja-JP': 'Japanese',
+        'id-ID': 'Indonesian',
+        'ko-KR': 'Korean',
+        'zh-CN': 'Chinese (Mandarin)',
+        'zh-TW': 'Chinese (Taiwan)',
+        'es-ES': 'Spanish (Spain)',
+        'es-MX': 'Spanish (Mexico)',
+        'fr-FR': 'French',
+        'de-DE': 'German',
+        'it-IT': 'Italian',
+        'pt-BR': 'Portuguese (Brazil)',
+        'pt-PT': 'Portuguese (Portugal)',
+        'ru-RU': 'Russian',
+        'ar-SA': 'Arabic',
+        'hi-IN': 'Hindi',
+        'th-TH': 'Thai',
+        'vi-VN': 'Vietnamese',
+        'nl-NL': 'Dutch',
+        'sv-SE': 'Swedish',
+        'da-DK': 'Danish',
+        'no-NO': 'Norwegian',
+        'fi-FI': 'Finnish',
+        'pl-PL': 'Polish',
+        'tr-TR': 'Turkish',
+        'he-IL': 'Hebrew',
+        'cs-CZ': 'Czech',
+        'hu-HU': 'Hungarian',
+        'ro-RO': 'Romanian',
+        'uk-UA': 'Ukrainian',
+        'bg-BG': 'Bulgarian',
+        'hr-HR': 'Croatian',
+        'sk-SK': 'Slovak',
+        'sl-SI': 'Slovenian',
+        'et-EE': 'Estonian',
+        'lv-LV': 'Latvian',
+        'lt-LT': 'Lithuanian'
+    };
+
+    // File upload handling
+    document.getElementById('uploadArea').addEventListener('click', function() {
+        document.getElementById('csvFile').click();
+    });
+
+    document.getElementById('csvFile').addEventListener('change', handleFile);
+
+    // Drag & drop
+    document.getElementById('uploadArea').addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.target.classList.add('dragover');
+    });
+
+    document.getElementById('uploadArea').addEventListener('dragleave', function(e) {
+        e.target.classList.remove('dragover');
+    });
+
+    document.getElementById('uploadArea').addEventListener('drop', function(e) {
+        e.preventDefault();
+        e.target.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFile({target: {files: files}});
+        }
+    });
+
+    function handleFile(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            parseCSV(e.target.result);
+        };
+        reader.readAsText(file);
+    }
+
+    function parseCSV(csvText) {
+        console.log('=== PARSING CSV (3 LANGUAGE VERSION) ===');
+        console.log('Raw CSV content:', csvText);
+
+        // Handle different line endings
+        const lines = csvText.split(/\r?\n|\r/).filter(line => line.trim() !== '');
+
+        console.log('Total lines found:', lines.length);
+
+        if (lines.length === 0) {
+            alert('CSV file is empty');
+            return;
+        }
+
+        csvData = [];
+
+        // Parse all lines into array of arrays
+        lines.forEach(function(line, index) {
+            const parts = line.split(',').map(p => p.trim().replace(/"/g, ''));
+            if (parts.length > 0) {
+                csvData.push(parts);
+            }
+            console.log('Line ' + index + ' parsed into ' + parts.length + ' parts:', parts);
+        });
+
+        if (csvData.length === 0) {
+            alert('No valid data found in CSV');
+            return;
+        }
+
+        // Detect column count from first row
+        columnCount = csvData[0].length;
+        console.log('=== DETECTED COLUMN COUNT: ' + columnCount + ' ===');
+        console.log('This version supports up to 3 languages!');
+
+        if (columnCount < 2) {
+            alert('CSV must have at least 2 columns for language learning');
+            return;
+        }
+
+        // Show CSV preview
+        showCSVPreview();
+
+        // Show column configuration
+        showColumnConfiguration();
+    }
+
+    function showCSVPreview() {
+        const previewDiv = document.getElementById('csvPreview');
+        const tableDiv = document.getElementById('previewTable');
+
+        let html = '<table><thead><tr>';
+
+        // Header row with column numbers
+        for (let i = 0; i < columnCount; i++) {
+            html += '<th>Column ' + (i + 1) + '</th>';
+        }
+        html += '</tr></thead><tbody>';
+
+        // Show first few rows as preview
+        const previewRows = Math.min(5, csvData.length);
+        for (let i = 0; i < previewRows; i++) {
+            html += '<tr>';
+            for (let j = 0; j < columnCount; j++) {
+                const cellData = csvData[i][j] || '';
+                html += '<td>' + cellData + '</td>';
+            }
+            html += '</tr>';
+        }
+
+        html += '</tbody></table>';
+
+        if (csvData.length > 5) {
+            html += '<p style="text-align: center; color: #666; margin-top: 10px;">... and ' + (csvData.length - 5) + ' more rows</p>';
+        }
+
+        tableDiv.innerHTML = html;
+        previewDiv.classList.remove('hidden');
+    }
+
+    function showColumnConfiguration() {
+        const configDiv = document.getElementById('columnConfig');
+        const mappingsDiv = document.getElementById('columnMappings');
+
+        let html = '';
+
+        for (let i = 0; i < columnCount; i++) {
+            // Get sample data from first few rows for this column
+            const samples = [];
+            for (let j = 0; j < Math.min(3, csvData.length); j++) {
+                if (csvData[j][i]) {
+                    samples.push(csvData[j][i]);
+                }
+            }
+            const sampleText = samples.join(', ');
+
+            html += '<div class="column-row">';
+            html += '<div class="column-preview">Column ' + (i + 1) + ':<br><small>' + sampleText + '</small></div>';
+            html += '<label><strong>Language:</strong></label>';
+            html += '<select id="lang_' + i + '" onchange="updateLanguageAssignment(' + i + ')">';
+
+            // Add language options with smart defaults
+            Object.keys(languages).forEach(code => {
+                let selected = '';
+                if (i === 0 && code === 'ja-JP') selected = ' selected';
+                else if (i === 1 && code === 'id-ID') selected = ' selected';
+                else if (i === 2 && code === 'en-US') selected = ' selected';
+
+                html += '<option value="' + code + '"' + selected + '>' + languages[code] + '</option>';
+            });
+
+            html += '</select>';
+            html += '<button onclick="testColumnSpeech(' + i + ')">🔊 Test</button>';
+            html += '</div>';
+        }
+
+        mappingsDiv.innerHTML = html;
+        configDiv.classList.remove('hidden');
+
+        // Initialize language assignments with better defaults
+        languageAssignments = {};
+        for (let i = 0; i < columnCount; i++) {
+            if (i === 0) languageAssignments[i] = 'ja-JP';
+            else if (i === 1) languageAssignments[i] = 'id-ID';
+            else if (i === 2) languageAssignments[i] = 'en-US';
+            else languageAssignments[i] = 'auto';
+        }
+
+        console.log('Initialized language assignments:', languageAssignments);
+    }
+
+    function updateLanguageAssignment(columnIndex) {
+        const selectElement = document.getElementById('lang_' + columnIndex);
+        languageAssignments[columnIndex] = selectElement.value;
+        console.log('Updated column ' + columnIndex + ' to language:', selectElement.value);
+    }
+
+    function testColumnSpeech(columnIndex) {
+        if (csvData.length === 0) return;
+
+        const sampleText = csvData[0][columnIndex];
+        const languageCode = languageAssignments[columnIndex];
+
+        if (sampleText) {
+            speak(sampleText, languageCode);
+        }
+    }
+
+    function startConfiguration() {
+        console.log('🚀 STARTING CONFIGURATION (3 LANGUAGE VERSION)');
+
+        // Update language assignments from dropdowns first
+        for (let i = 0; i < columnCount; i++) {
+            const selectElement = document.getElementById('lang_' + i);
+            if (selectElement) {
+                languageAssignments[i] = selectElement.value;
+            }
+        }
+
+        console.log('Final language assignments:', languageAssignments);
+        console.log('Column count:', columnCount);
+
+        // Validate that languages are assigned
+        for (let i = 0; i < columnCount; i++) {
+            if (!languageAssignments[i]) {
+                alert('Please assign a language to column ' + (i + 1));
+                return;
+            }
+        }
+
+        // Create word pairs using up to 3 columns (hardcoded)
+        wordPairs = [];
+
+        csvData.forEach(function(row, index) {
+            if (row[0] && row[1]) {
+                const wordPair = {
+                    word1: row[0],
+                    word2: row[1],
+                    lang1: languageAssignments[0],
+                    lang2: languageAssignments[1]
+                };
+
+                // Add third column if available
+                if (columnCount >= 3 && row[2] && row[2].trim() !== '') {
+                    wordPair.word3 = row[2];
+                    wordPair.lang3 = languageAssignments[2];
+                }
+
+                wordPairs.push(wordPair);
+                console.log('Created word pair:', wordPair);
+            }
+        });
+
+        console.log('Total word pairs created:', wordPairs.length);
+
+        if (wordPairs.length > 0) {
+            initializeLearning();
+            const langCount = columnCount >= 3 ? 3 : 2;
+            alert('✅ Configuration complete! Ready to start learning with ' + wordPairs.length + ' word sets across ' + langCount + ' languages.');
+        } else {
+            alert('❌ No valid word pairs found in the first columns.');
+        }
+    }
+
+    function speak(text, languageCode) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        const rate = parseFloat(document.getElementById('speechRate').value);
+
+        utterance.rate = rate;
+
+        if (languageCode && languageCode !== 'auto') {
+            utterance.lang = languageCode;
+        }
+
+        speechSynthesis.speak(utterance);
+    }
+
+    function initializeLearning() {
+        // Hide configuration panels
+        document.getElementById('columnConfig').classList.add('hidden');
+        document.getElementById('csvPreview').classList.add('hidden');
+
+        // Show learning interface
+        document.getElementById('settingsPanel').classList.remove('hidden');
+        document.getElementById('controls').classList.remove('hidden');
+        document.getElementById('progressContainer').classList.remove('hidden');
+        document.getElementById('wordDisplay').classList.remove('hidden');
+        document.getElementById('stats').classList.remove('hidden');
+        document.getElementById('wordList').classList.remove('hidden');
+
+        currentIndex = 0;
+        updateDisplay();
+        updateWordList();
+        updateStats();
+    }
+
+    function startLearning() {
+        if (wordPairs.length === 0) {
+            alert('Please configure your CSV file first!');
+            return;
+        }
+
+        isPlaying = true;
+        isPaused = false;
+        updateButtons();
+
+        playCurrentPair();
+    }
+
+    function playCurrentPair() {
+        if (!isPlaying || isPaused) return;
+
+        const pair = wordPairs[currentIndex];
+        if (!pair) return;
+
+        console.log('🎵 Playing word set:', pair);
+
+        updateDisplay();
+        updateProgress();
+        updateStats();
+        updateWordList();
+
+        // Speak first word
+        speakAsync(pair.word1, pair.lang1).then(function() {
+            if (!isPlaying || isPaused) return;
+            console.log('✓ Finished word 1');
+
+            // Short pause
+            return sleep(500);
+        }).then(function() {
+            if (!isPlaying || isPaused) return;
+
+            // Speak second word
+            return speakAsync(pair.word2, pair.lang2);
+        }).then(function() {
+            if (!isPlaying || isPaused) return;
+            console.log('✓ Finished word 2');
+
+            // Short pause
+            return sleep(500);
+        }).then(function() {
+            if (!isPlaying || isPaused) return;
+
+            // Speak third word if it exists
+            if (pair.word3) {
+                console.log('🎵 Speaking word 3:', pair.word3);
+                return speakAsync(pair.word3, pair.lang3);
+            } else {
+                console.log('⏭️ No word 3, skipping');
+                return Promise.resolve(); // Skip if no third word
+            }
+        }).then(function() {
+            if (!isPlaying || isPaused) return;
+            if (pair.word3) {
+                console.log('✓ Finished word 3');
+            }
+
+            // Longer pause between word pairs
+            const pauseTime = parseInt(document.getElementById('pauseTime').value);
+            return sleep(pauseTime);
+        }).then(function() {
+            if (!isPlaying || isPaused) return;
+
+            // Move to next word
+            if (repeatMode) {
+                playCurrentPair();
+            } else {
+                currentIndex++;
+                if (currentIndex >= wordPairs.length) {
+                    alert('🎉 Congratulations! You have completed all words!');
+                    stopLearning();
+                } else {
+                    playCurrentPair();
+                }
+            }
+        });
+    }
+
+    function speakAsync(text, languageCode) {
+        return new Promise(function(resolve) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            const rate = parseFloat(document.getElementById('speechRate').value);
+
+            utterance.rate = rate;
+            utterance.onend = resolve;
+            utterance.onerror = resolve;
+
+            if (languageCode && languageCode !== 'auto') {
+                utterance.lang = languageCode;
+            }
+
+            speechSynthesis.speak(utterance);
+        });
+    }
+
+    function sleep(ms) {
+        return new Promise(function(resolve) {
+            setTimeout(resolve, ms);
+        });
+    }
+
+    function pauseLearning() {
+        isPaused = true;
+        speechSynthesis.cancel();
+        updateButtons();
+    }
+
+    function stopLearning() {
+        isPlaying = false;
+        isPaused = false;
+        speechSynthesis.cancel();
+        currentIndex = 0;
+        updateDisplay();
+        updateButtons();
+        updateProgress();
+        updateStats();
+    }
+
+    function nextWord() {
+        if (currentIndex < wordPairs.length - 1) {
+            currentIndex++;
+            updateDisplay();
+            updateProgress();
+            updateStats();
+            updateWordList();
+        }
+    }
+
+    function previousWord() {
+        if (currentIndex > 0) {
+            currentIndex--;
+            updateDisplay();
+            updateProgress();
+            updateStats();
+            updateWordList();
+        }
+    }
+
+    function toggleRepeat() {
+        repeatMode = !repeatMode;
+        const btn = document.getElementById('repeatBtn');
+        btn.textContent = '🔁 Repeat: ' + (repeatMode ? 'ON' : 'OFF');
+    }
+
+    function updateDisplay() {
+        if (wordPairs.length === 0) return;
+
+        const pair = wordPairs[currentIndex];
+
+        console.log('📺 Updating display with:', pair);
+
+        // Always show first 2 words
+        document.getElementById('currentWord1').textContent = pair.word1 || '';
+        document.getElementById('currentWord2').textContent = pair.word2 || '';
+
+        // Show or hide third word based on availability
+        const word3Element = document.getElementById('currentWord3');
+        if (pair.word3) {
+            word3Element.textContent = pair.word3;
+            word3Element.style.display = 'block';
+            console.log('✓ Showing 3rd word:', pair.word3);
+        } else {
+            word3Element.style.display = 'none';
+            console.log('✗ Hiding 3rd word (not available)');
+        }
+    }
+
+    function updateProgress() {
+        const progress = wordPairs.length > 0 ? ((currentIndex + 1) / wordPairs.length) * 100 : 0;
+        document.getElementById('progressBar').style.width = progress + '%';
+    }
+
+    function updateStats() {
+        document.getElementById('totalWords').textContent = wordPairs.length;
+        document.getElementById('currentIndex').textContent = currentIndex + 1;
+        document.getElementById('wordsRemaining').textContent = wordPairs.length - currentIndex - 1;
+    }
+
+    function updateWordList() {
+        const listDiv = document.getElementById('wordList');
+        listDiv.innerHTML = '';
+
+        wordPairs.forEach(function(pair, index) {
+            const item = document.createElement('div');
+            item.className = 'word-item' + (index === currentIndex ? ' current' : '');
+
+            let displayText = '<strong>' + pair.word1 + '</strong> → ' + pair.word2;
+            if (pair.word3) {
+                displayText += ' → ' + pair.word3;
+                console.log('📝 Word list showing 3 words for item', index);
+            }
+
+            item.innerHTML = displayText;
+            item.onclick = function() {
+                currentIndex = index;
+                updateDisplay();
+                updateProgress();
+                updateStats();
+                updateWordList();
+            };
+            listDiv.appendChild(item);
+        });
+    }
+
+    function updateButtons() {
+        document.getElementById('startBtn').disabled = isPlaying && !isPaused;
+        document.getElementById('pauseBtn').disabled = !isPlaying || isPaused;
+        document.getElementById('stopBtn').disabled = !isPlaying;
+        document.getElementById('nextBtn').disabled = wordPairs.length === 0;
+        document.getElementById('prevBtn').disabled = wordPairs.length === 0;
+    }
+
+    // Update rate display
+    document.getElementById('speechRate').addEventListener('input', function() {
+        document.getElementById('rateDisplay').textContent = this.value + 'x';
+    });
+
+    // Check TTS support
+    if (!('speechSynthesis' in window)) {
+        alert('❌ Speech Synthesis not supported in this browser. Please use Chrome, Safari, or Firefox.');
+    }
+
+    console.log('🌍 Multi-Language TTS Learning Tool Ready! (3 Language Version)');
+    console.log('📝 Upload CSV with up to 3 language columns');
+</script>
+</body>
+</html>
