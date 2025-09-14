@@ -33,6 +33,35 @@
             border-color: #007cba;
             background: #f0f8ff;
         }
+        .load-options {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .load-btn {
+            background: #28a745;
+            color: white;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .load-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+        .load-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
         .column-config {
             background: #f8f9fa;
             padding: 25px;
@@ -188,19 +217,47 @@
             background: #e9ecef;
             font-weight: bold;
         }
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid #f5c6cb;
+        }
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid #c3e6cb;
+        }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>🌍📚 Multi-Language Learning TTS</h1>
-    <p><strong>NEW:</strong> Now supports up to 3 languages! Upload CSV with up to 3 columns.</p>
+    <p><strong>NEW:</strong> Now supports up to 3 languages! Upload CSV or load example file.</p>
 
-    <!-- File Upload -->
+    <!-- Load Options -->
+    <div class="load-options">
+        <button class="load-btn" onclick="loadExampleCSV()">
+            📋 Load Example CSV
+        </button>
+    </div>
+
+    <!-- File Upload (Hidden) -->
+    <input type="file" id="csvFile" accept=".csv" style="display: none;" onchange="handleFile(event)">
+
+    <!-- Upload Area -->
     <div class="upload-area" id="uploadArea">
-        <input type="file" id="csvFile" accept=".csv" style="display: none;">
         <p>📄 <strong>Click here or drag & drop your CSV file</strong></p>
         <p style="font-size: 0.9em; color: #666;">CSV format with 2-3 language columns</p>
     </div>
+
+    <!-- Messages -->
+    <div id="messageArea"></div>
 
     <!-- CSV Preview -->
     <div class="csv-preview hidden" id="csvPreview">
@@ -328,6 +385,71 @@
         'lt-LT': 'Lithuanian'
     };
 
+    // Load example CSV function
+    async function loadExampleCSV() {
+        showMessage('📂 Loading example.csv...', 'info');
+
+        try {
+            const response = await fetch('./example.csv');
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const csvText = await response.text();
+
+            if (!csvText || csvText.trim() === '') {
+                throw new Error('Example CSV file is empty');
+            }
+
+            parseCSV(csvText);
+            showMessage('✅ Example CSV loaded successfully!', 'success');
+
+        } catch (error) {
+            console.error('Error loading example CSV:', error);
+            let errorMsg = '❌ Could not load example.csv: ';
+
+            if (error.message.includes('404') || error.message.includes('Not Found')) {
+                errorMsg += 'File not found. Please make sure example.csv exists in the same folder as this HTML file.';
+            } else if (error.message.includes('Failed to fetch')) {
+                errorMsg += 'Network error. Make sure you\'re running this from a web server, not opening directly in browser.';
+            } else {
+                errorMsg += error.message;
+            }
+
+            showMessage(errorMsg, 'error');
+        }
+    }
+
+    // Show messages to user
+    function showMessage(message, type = 'info') {
+        const messageArea = document.getElementById('messageArea');
+        const messageDiv = document.createElement('div');
+
+        if (type === 'error') {
+            messageDiv.className = 'error-message';
+        } else if (type === 'success') {
+            messageDiv.className = 'success-message';
+        } else {
+            messageDiv.className = 'info-message';
+        }
+
+        messageDiv.innerHTML = message;
+
+        // Clear previous messages
+        messageArea.innerHTML = '';
+        messageArea.appendChild(messageDiv);
+
+        // Auto-hide success/info messages after 5 seconds
+        if (type !== 'error') {
+            setTimeout(() => {
+                if (messageDiv.parentNode) {
+                    messageDiv.parentNode.removeChild(messageDiv);
+                }
+            }, 5000);
+        }
+    }
+
     // File upload handling
     document.getElementById('uploadArea').addEventListener('click', function() {
         document.getElementById('csvFile').click();
@@ -335,7 +457,7 @@
 
     document.getElementById('csvFile').addEventListener('change', handleFile);
 
-    // Drag & drop
+    // Drag & drop handling
     document.getElementById('uploadArea').addEventListener('dragover', function(e) {
         e.preventDefault();
         e.target.classList.add('dragover');
@@ -358,9 +480,15 @@
         const file = event.target.files[0];
         if (!file) return;
 
+        showMessage('📂 Loading your CSV file...', 'info');
+
         const reader = new FileReader();
         reader.onload = function(e) {
             parseCSV(e.target.result);
+            showMessage('✅ CSV file loaded successfully!', 'success');
+        };
+        reader.onerror = function() {
+            showMessage('❌ Error reading file. Please try again.', 'error');
         };
         reader.readAsText(file);
     }
@@ -375,7 +503,7 @@
         console.log('Total lines found:', lines.length);
 
         if (lines.length === 0) {
-            alert('CSV file is empty');
+            showMessage('❌ CSV file is empty', 'error');
             return;
         }
 
@@ -391,7 +519,7 @@
         });
 
         if (csvData.length === 0) {
-            alert('No valid data found in CSV');
+            showMessage('❌ No valid data found in CSV', 'error');
             return;
         }
 
@@ -401,7 +529,7 @@
         console.log('This version supports up to 3 languages!');
 
         if (columnCount < 2) {
-            alert('CSV must have at least 2 columns for language learning');
+            showMessage('❌ CSV must have at least 2 columns for language learning', 'error');
             return;
         }
 
@@ -530,7 +658,7 @@
         // Validate that languages are assigned
         for (let i = 0; i < columnCount; i++) {
             if (!languageAssignments[i]) {
-                alert('Please assign a language to column ' + (i + 1));
+                showMessage('❌ Please assign a language to column ' + (i + 1), 'error');
                 return;
             }
         }
@@ -563,9 +691,9 @@
         if (wordPairs.length > 0) {
             initializeLearning();
             const langCount = columnCount >= 3 ? 3 : 2;
-            alert('✅ Configuration complete! Ready to start learning with ' + wordPairs.length + ' word sets across ' + langCount + ' languages.');
+            showMessage('✅ Configuration complete! Ready to start learning with ' + wordPairs.length + ' word sets across ' + langCount + ' languages.', 'success');
         } else {
-            alert('❌ No valid word pairs found in the first columns.');
+            showMessage('❌ No valid word pairs found in the first columns.', 'error');
         }
     }
 
@@ -583,9 +711,10 @@
     }
 
     function initializeLearning() {
-        // Hide configuration panels
+        // Hide configuration panels and messages
         document.getElementById('columnConfig').classList.add('hidden');
         document.getElementById('csvPreview').classList.add('hidden');
+        document.getElementById('messageArea').innerHTML = '';
 
         // Show learning interface
         document.getElementById('settingsPanel').classList.remove('hidden');
@@ -603,7 +732,7 @@
 
     function startLearning() {
         if (wordPairs.length === 0) {
-            alert('Please configure your CSV file first!');
+            showMessage('❌ Please configure your CSV file first!', 'error');
             return;
         }
 
@@ -674,7 +803,7 @@
             } else {
                 currentIndex++;
                 if (currentIndex >= wordPairs.length) {
-                    alert('🎉 Congratulations! You have completed all words!');
+                    showMessage('🎉 Congratulations! You have completed all words!', 'success');
                     stopLearning();
                 } else {
                     playCurrentPair();
@@ -824,11 +953,11 @@
 
     // Check TTS support
     if (!('speechSynthesis' in window)) {
-        alert('❌ Speech Synthesis not supported in this browser. Please use Chrome, Safari, or Firefox.');
+        showMessage('❌ Speech Synthesis not supported in this browser. Please use Chrome, Safari, or Firefox.', 'error');
     }
 
-    console.log('🌍 Multi-Language TTS Learning Tool Ready! (3 Language Version)');
-    console.log('📝 Upload CSV with up to 3 language columns');
+    console.log('🌍 Multi-Language TTS Learning Tool Ready! (3 Language Version with Example CSV)');
+    console.log('📝 Upload CSV with up to 3 language columns or load example.csv');
 </script>
 </body>
 </html>
