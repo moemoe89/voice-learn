@@ -637,7 +637,38 @@
         const languageCode = languageAssignments[columnIndex];
 
         if (sampleText) {
-            speak(sampleText, languageCode);
+            // Use the enhanced speakAsync function for testing
+            console.log('🔊 Testing column', columnIndex, 'with text:', sampleText, 'language:', languageCode);
+
+            // Create utterance with explicit properties like in the article
+            const utterance = new SpeechSynthesisUtterance();
+            utterance.text = sampleText;
+            utterance.lang = languageCode;
+            utterance.rate = parseFloat(document.getElementById('speechRate').value);
+
+            // Use the improved voice selection
+            if (voicesLoaded && availableVoices.length > 0) {
+                let bestVoice = availableVoices.find(voice => voice.lang === languageCode) ||
+                    availableVoices.find(voice => voice.lang.startsWith(languageCode.split('-')[0]));
+
+                // iOS-specific voice matching
+                if (!bestVoice && /iPad|iPhone|iPod/.test(navigator.userAgent)) {
+                    if (languageCode.startsWith('ja')) {
+                        bestVoice = availableVoices.find(voice =>
+                            voice.name.toLowerCase().includes('kyoko') ||
+                            voice.name.toLowerCase().includes('japanese') ||
+                            voice.name.includes('日本語')
+                        );
+                    }
+                }
+
+                if (bestVoice) {
+                    utterance.voice = bestVoice;
+                    console.log('🎤 Test using voice:', bestVoice.name, '(' + bestVoice.lang + ')');
+                }
+            }
+
+            speechSynthesis.speak(utterance);
         }
     }
 
