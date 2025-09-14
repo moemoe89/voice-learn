@@ -756,13 +756,16 @@
         updateStats();
         updateWordList();
 
+        // Add longer pause for mobile voice switching
+        const mobilePause = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ? 800 : 500;
+
         // Speak first word
         speakAsync(pair.word1, pair.lang1).then(function() {
             if (!isPlaying || isPaused) return;
             console.log('✓ Finished word 1');
 
-            // Short pause
-            return sleep(500);
+            // Longer pause for mobile
+            return sleep(mobilePause);
         }).then(function() {
             if (!isPlaying || isPaused) return;
 
@@ -772,8 +775,8 @@
             if (!isPlaying || isPaused) return;
             console.log('✓ Finished word 2');
 
-            // Short pause
-            return sleep(500);
+            // Longer pause for mobile
+            return sleep(mobilePause);
         }).then(function() {
             if (!isPlaying || isPaused) return;
 
