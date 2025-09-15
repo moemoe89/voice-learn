@@ -1,13 +1,14 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>🌍📚 Multi-Language Learning TTS (3 Languages)</title>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌍 Multi-Language Voice Learning App</title>
     <style>
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
-            max-width: 1000px;
-            margin: 30px auto;
+            max-width: 1200px;
+            margin: 20px auto;
             padding: 20px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
@@ -15,9 +16,27 @@
         }
         .container {
             background: rgba(255,255,255,0.95);
-            padding: 40px;
+            padding: 30px;
             border-radius: 15px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            color: #333;
+        }
+        .step {
+            margin: 30px 0;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+        .step.active {
+            background: #f8f9fa;
+            border-color: #007cba;
+        }
+        .step.completed {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+        .step h2 {
+            margin-top: 0;
             color: #333;
         }
         .upload-area {
@@ -28,91 +47,159 @@
             margin: 20px 0;
             background: #fafafa;
             cursor: pointer;
+            transition: all 0.3s ease;
         }
-        .upload-area.dragover {
+        .upload-area:hover, .upload-area.dragover {
             border-color: #007cba;
             background: #f0f8ff;
         }
-        .load-options {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-            margin: 20px 0;
-            flex-wrap: wrap;
-        }
-        .load-btn {
-            background: #28a745;
-            color: white;
-            padding: 15px 25px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .load-btn:hover {
-            background: #218838;
-            transform: translateY(-2px);
-        }
-        .load-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-        }
-        .column-config {
+        .csv-preview {
             background: #f8f9fa;
-            padding: 25px;
-            border-radius: 10px;
-            margin: 20px 0;
-            border: 2px solid #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid #dee2e6;
+            max-height: 300px;
+            overflow: auto;
         }
-        .column-row {
+        .csv-preview table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .csv-preview th, .csv-preview td {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        .csv-preview th {
+            background: #e9ecef;
+            font-weight: bold;
+        }
+        .config-row {
             display: flex;
             align-items: center;
             margin: 15px 0;
             gap: 15px;
-            padding: 10px;
+            padding: 15px;
             background: white;
             border-radius: 8px;
+            border: 1px solid #ddd;
         }
         .column-preview {
             background: #e3f2fd;
-            padding: 8px 12px;
+            padding: 10px 15px;
             border-radius: 5px;
             font-weight: bold;
-            min-width: 120px;
+            min-width: 150px;
             font-family: monospace;
+            font-size: 14px;
+        }
+        .voice-select {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+        }
+        .test-btn {
+            background: #28a745;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .test-btn:hover {
+            background: #218838;
         }
         .word-display {
             text-align: center;
-            padding: 30px;
+            padding: 40px 20px;
             margin: 20px 0;
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
-            border-radius: 10px;
-            min-height: 120px;
+            border-radius: 15px;
+            min-height: 150px;
             display: flex;
             flex-direction: column;
             justify-content: center;
+            font-size: 1.2em;
+            line-height: 1.5;
         }
-        .word-1 {
+        .row-header {
+            font-size: 1em;
+            opacity: 0.9;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .word-stack {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .word-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 15px 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            width: 90%;
+            max-width: 500px;
+        }
+        .word-item.first {
             font-size: 2.5em;
             font-weight: bold;
-            margin: 10px 0;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            padding: 25px 30px;
+            background: rgba(255,255,255,0.15);
         }
-        .word-2 {
-            font-size: 1.5em;
-            opacity: 0.9;
-            margin: 10px 0;
+        .word-item.second {
+            font-size: 2em;
+            font-weight: 600;
+            padding: 20px 25px;
         }
-        .word-3 {
+        .word-item.third {
+            font-size: 1.7em;
+            font-weight: 500;
+            padding: 18px 22px;
+        }
+        .word-item.fourth {
+            font-size: 1.4em;
+            font-weight: 400;
+            padding: 15px 20px;
+        }
+        .word-item.fifth-plus {
             font-size: 1.2em;
+            font-weight: 300;
+            padding: 12px 18px;
+        }
+        .word-item.active {
+            background: rgba(255,255,255,0.25);
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.5);
+        }
+        .word-content {
+            flex: 1;
+        }
+        .word-text {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .word-language {
+            font-size: 0.6em;
             opacity: 0.8;
-            margin: 10px 0;
+            font-weight: normal;
+        }
+        .language-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin: 5px 0;
         }
         .controls {
             display: flex;
@@ -131,61 +218,66 @@
             font-size: 16px;
             transition: all 0.3s ease;
         }
-        button:hover { background: #005a8b; transform: translateY(-2px); }
-        button:disabled { background: #ccc; cursor: not-allowed; transform: none; }
-        button.start-btn {
+        button:hover {
+            background: #005a8b;
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        button.primary {
             background: #28a745;
             font-size: 18px;
             padding: 15px 30px;
         }
-        button.start-btn:hover { background: #218838; }
+        button.primary:hover {
+            background: #218838;
+        }
+        .load-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        .load-btn {
+            background: #28a745;
+            color: white;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .load-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+        .load-btn.secondary {
+            background: #007cba;
+        }
+        .load-btn.secondary:hover {
+            background: #005a8b;
+        }
         .progress {
             background: #e0e0e0;
             border-radius: 10px;
             overflow: hidden;
             margin: 20px 0;
+            height: 8px;
         }
         .progress-bar {
             background: linear-gradient(90deg, #667eea, #764ba2);
-            height: 8px;
+            height: 100%;
             transition: width 0.3s ease;
         }
-        .settings {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-        }
-        .setting-row {
-            display: flex;
-            align-items: center;
-            margin: 10px 0;
-            gap: 15px;
-        }
-        select, input[type="range"], input[type="number"] {
-            padding: 8px;
-            border-radius: 5px;
-            border: 1px solid #ddd;
-            min-width: 200px;
-        }
-        .word-list {
-            max-height: 300px;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            margin: 20px 0;
-        }
-        .word-item {
-            padding: 10px 15px;
-            border-bottom: 1px solid #eee;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .word-item:hover { background: #f5f5f5; }
-        .word-item.current { background: #e3f2fd; font-weight: bold; }
         .stats {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
             gap: 15px;
             margin: 20px 0;
         }
@@ -194,200 +286,222 @@
             padding: 15px;
             border-radius: 8px;
             text-align: center;
-        }
-        .stat-number { font-size: 1.8em; font-weight: bold; color: #007cba; }
-        .hidden { display: none; }
-        .csv-preview {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
             border: 1px solid #dee2e6;
         }
-        .csv-preview table {
-            width: 100%;
-            border-collapse: collapse;
+        .stat-number {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #007cba;
         }
-        .csv-preview th, .csv-preview td {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            text-align: left;
+        .settings {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #dee2e6;
         }
-        .csv-preview th {
-            background: #e9ecef;
+        .setting-row {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            gap: 15px;
+        }
+        .setting-row label {
+            min-width: 150px;
             font-weight: bold;
         }
-        .error-message {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-            border: 1px solid #f5c6cb;
+        input[type="range"] {
+            flex: 1;
+            margin: 0 10px;
         }
-        .success-message {
+        input[type="number"] {
+            width: 80px;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        .hidden {
+            display: none;
+        }
+        .message {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        .message.success {
             background: #d4edda;
             color: #155724;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
             border: 1px solid #c3e6cb;
+        }
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .word-list {
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .word-item-list {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .word-item-list:hover {
+            background: #f5f5f5;
+        }
+        .word-item-list.current {
+            background: #e3f2fd;
+            font-weight: bold;
+        }
+        @media (max-width: 768px) {
+            .config-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .column-preview {
+                min-width: auto;
+                margin-bottom: 10px;
+            }
         }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>🌍📚 Multi-Language Learning TTS</h1>
-    <p><strong>NEW:</strong> Now supports up to 3 languages! Upload CSV or load example file.</p>
+    <h1>🌍 Multi-Language Voice Learning App</h1>
+    <p><strong>Upload CSV → Configure Languages → Start Learning</strong></p>
 
-    <!-- Load Options -->
-    <div class="load-options">
-        <button class="load-btn" onclick="loadExampleCSV()">
-            📋 Load Example CSV
-        </button>
+    <!-- Step 1: Upload CSV WITH BUTTONS -->
+    <div class="step active" id="step1">
+        <h2>📄 Step 1: Load CSV File</h2>
+
+        <!-- LOAD BUTTONS - SHOULD BE VISIBLE NOW -->
+        <div class="load-buttons">
+            <button class="load-btn" onclick="loadExampleCSV()">
+                📋 Load Example CSV
+            </button>
+            <button class="load-btn secondary" onclick="document.getElementById('csvFile').click()">
+                📁 Upload Your CSV
+            </button>
+        </div>
+
+        <p style="text-align: center; margin: 20px 0; color: #666;">
+            Or use the upload area below:
+        </p>
+
+        <div class="upload-area" id="uploadArea">
+            <input type="file" id="csvFile" accept=".csv" style="display: none;">
+            <p>📁 <strong>Click here or drag & drop your CSV file</strong></p>
+            <p style="font-size: 0.9em; color: #666;">CSV with multiple language columns</p>
+        </div>
+        <div id="uploadMessage"></div>
     </div>
 
-    <!-- File Upload (Hidden) -->
-    <input type="file" id="csvFile" accept=".csv" style="display: none;" onchange="handleFile(event)">
-
-    <!-- Upload Area -->
-    <div class="upload-area" id="uploadArea">
-        <p>📄 <strong>Click here or drag & drop your CSV file</strong></p>
-        <p style="font-size: 0.9em; color: #666;">CSV format with 2-3 language columns</p>
+    <!-- Step 2: CSV Preview -->
+    <div class="step hidden" id="step2">
+        <h2>👀 Step 2: CSV Preview</h2>
+        <div id="csvPreview" class="csv-preview"></div>
     </div>
 
-    <!-- Messages -->
-    <div id="messageArea"></div>
-
-    <!-- CSV Preview -->
-    <div class="csv-preview hidden" id="csvPreview">
-        <h3>📋 CSV Preview</h3>
-        <div id="previewTable"></div>
-    </div>
-
-    <!-- Column Configuration -->
-    <div class="column-config hidden" id="columnConfig">
-        <h3>🎯 Language Configuration</h3>
-        <p>Assign languages to each column, then click Start Learning:</p>
-        <div id="columnMappings"></div>
+    <!-- Step 3: Language Configuration -->
+    <div class="step hidden" id="step3">
+        <h2>🎯 Step 3: Configure Languages for Each Column</h2>
+        <p>Select the voice/language for each column, then start learning:</p>
+        <div id="languageConfig"></div>
         <div style="text-align: center; margin-top: 25px;">
-            <button class="start-btn" onclick="startConfiguration()" id="startConfigBtn">🚀 Start Learning</button>
+            <button class="primary" onclick="startLearning()" id="startLearningBtn">🚀 Start Learning</button>
         </div>
     </div>
 
-    <!-- Settings -->
-    <div class="settings hidden" id="settingsPanel">
-        <h3>🎛️ Settings</h3>
-        <div class="setting-row">
-            <label><strong>Speech Rate:</strong></label>
-            <input type="range" id="speechRate" min="0.5" max="2" value="0.8" step="0.1">
-            <span id="rateDisplay">0.8x</span>
-        </div>
-        <div class="setting-row">
-            <label><strong>Pause between words:</strong></label>
-            <input type="number" id="pauseTime" value="2000" min="500" max="10000" step="500">
-            <span>ms</span>
-        </div>
-    </div>
+    <!-- Step 4: Learning Interface -->
+    <div class="step hidden" id="step4">
+        <h2>📚 Learning Mode</h2>
+        <div id="learningMessage"></div>
 
-    <!-- Word Display - NOW WITH 3 WORDS -->
-    <div class="word-display hidden" id="wordDisplay">
-        <div class="word-1" id="currentWord1">Word 1</div>
-        <div class="word-2" id="currentWord2">Word 2</div>
-        <div class="word-3" id="currentWord3">Word 3</div>
-    </div>
-
-    <!-- Progress Bar -->
-    <div class="progress hidden" id="progressContainer">
-        <div class="progress-bar" id="progressBar"></div>
-    </div>
-
-    <!-- Controls -->
-    <div class="controls hidden" id="controls">
-        <button onclick="startLearning()" id="startBtn">▶️ Start</button>
-        <button onclick="pauseLearning()" id="pauseBtn" disabled>⏸️ Pause</button>
-        <button onclick="stopLearning()" id="stopBtn" disabled>⏹️ Stop</button>
-        <button onclick="nextWord()" id="nextBtn" disabled>⏭️ Next</button>
-        <button onclick="previousWord()" id="prevBtn" disabled>⏮️ Previous</button>
-        <button onclick="toggleRepeat()" id="repeatBtn">🔁 Repeat: OFF</button>
-    </div>
-
-    <!-- Statistics -->
-    <div class="stats hidden" id="stats">
-        <div class="stat-card">
-            <div class="stat-number" id="totalWords">0</div>
-            <div>Total Words</div>
+        <!-- Settings -->
+        <div class="settings">
+            <h3>⚙️ Settings</h3>
+            <div class="setting-row">
+                <label>Speech Speed:</label>
+                <input type="range" id="speechRate" min="0.5" max="2" value="0.8" step="0.1">
+                <span id="rateDisplay">0.8x</span>
+            </div>
+            <div class="setting-row">
+                <label>Pause between words:</label>
+                <input type="number" id="pauseTime" value="1500" min="500" max="5000" step="250">
+                <span>ms</span>
+            </div>
         </div>
-        <div class="stat-card">
-            <div class="stat-number" id="currentIndex">0</div>
-            <div>Current Word</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number" id="wordsRemaining">0</div>
-            <div>Remaining</div>
-        </div>
-    </div>
 
-    <!-- Word List -->
-    <div class="word-list hidden" id="wordList"></div>
+        <!-- Word Display -->
+        <div class="word-display" id="wordDisplay">
+            <div class="row-header">Row <span id="currentRowNumber">1</span></div>
+            <div id="wordStack"></div>
+            <div class="language-label" id="currentLanguage">Click Start to begin</div>
+        </div>
+
+        <!-- Progress -->
+        <div class="progress">
+            <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <button onclick="startPlayback()" id="playBtn">▶️ Play</button>
+            <button onclick="pausePlayback()" id="pauseBtn" disabled>⏸️ Pause</button>
+            <button onclick="stopPlayback()" id="stopBtn" disabled>⏹️ Stop</button>
+            <button onclick="previousRow()" id="prevBtn" disabled>⏮️ Previous</button>
+            <button onclick="nextRow()" id="nextBtn" disabled>⏭️ Next</button>
+            <button onclick="toggleRepeat()" id="repeatBtn">🔁 Repeat: OFF</button>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalRows">0</div>
+                <div>Total Rows</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="currentRow">0</div>
+                <div>Current Row</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="remainingRows">0</div>
+                <div>Remaining</div>
+            </div>
+        </div>
+
+        <!-- Word List -->
+        <div class="word-list" id="wordList"></div>
+    </div>
 </div>
 
 <script>
     let csvData = [];
-    let wordPairs = [];
-    let currentIndex = 0;
+    let columnCount = 0;
+    let languageConfig = {};
+    let availableVoices = [];
+    let currentRowIndex = 0;
+    let currentColumnIndex = 0;
     let isPlaying = false;
     let isPaused = false;
     let repeatMode = false;
-    let columnCount = 0;
-    let languageAssignments = {};
-
-    // Language options with their codes
-    const languages = {
-        'auto': 'Auto-detect',
-        'en-US': 'English (US)',
-        'en-GB': 'English (UK)',
-        'ja-JP': 'Japanese',
-        'id-ID': 'Indonesian',
-        'ko-KR': 'Korean',
-        'zh-CN': 'Chinese (Mandarin)',
-        'zh-TW': 'Chinese (Taiwan)',
-        'es-ES': 'Spanish (Spain)',
-        'es-MX': 'Spanish (Mexico)',
-        'fr-FR': 'French',
-        'de-DE': 'German',
-        'it-IT': 'Italian',
-        'pt-BR': 'Portuguese (Brazil)',
-        'pt-PT': 'Portuguese (Portugal)',
-        'ru-RU': 'Russian',
-        'ar-SA': 'Arabic',
-        'hi-IN': 'Hindi',
-        'th-TH': 'Thai',
-        'vi-VN': 'Vietnamese',
-        'nl-NL': 'Dutch',
-        'sv-SE': 'Swedish',
-        'da-DK': 'Danish',
-        'no-NO': 'Norwegian',
-        'fi-FI': 'Finnish',
-        'pl-PL': 'Polish',
-        'tr-TR': 'Turkish',
-        'he-IL': 'Hebrew',
-        'cs-CZ': 'Czech',
-        'hu-HU': 'Hungarian',
-        'ro-RO': 'Romanian',
-        'uk-UA': 'Ukrainian',
-        'bg-BG': 'Bulgarian',
-        'hr-HR': 'Croatian',
-        'sk-SK': 'Slovak',
-        'sl-SI': 'Slovenian',
-        'et-EE': 'Estonian',
-        'lv-LV': 'Latvian',
-        'lt-LT': 'Lithuanian'
-    };
 
     // Load example CSV function
     async function loadExampleCSV() {
-        showMessage('📂 Loading example.csv...', 'info');
+        showMessage('📂 Loading example.csv...', 'info', 'uploadMessage');
 
         try {
             const response = await fetch('./example.csv');
@@ -402,8 +516,9 @@
                 throw new Error('Example CSV file is empty');
             }
 
+            // Parse the loaded CSV
             parseCSV(csvText);
-            showMessage('✅ Example CSV loaded successfully!', 'success');
+            showMessage('✅ Example CSV loaded successfully!', 'success', 'uploadMessage');
 
         } catch (error) {
             console.error('Error loading example CSV:', error);
@@ -417,38 +532,23 @@
                 errorMsg += error.message;
             }
 
-            showMessage(errorMsg, 'error');
+            showMessage(errorMsg, 'error', 'uploadMessage');
         }
     }
 
-    // Show messages to user
-    function showMessage(message, type = 'info') {
-        const messageArea = document.getElementById('messageArea');
-        const messageDiv = document.createElement('div');
+    // Initialize voices (using working pattern from CodePen)
+    function loadVoices() {
+        availableVoices = speechSynthesis.getVoices();
+        console.log('🎤 Loaded voices:', availableVoices.length);
 
-        if (type === 'error') {
-            messageDiv.className = 'error-message';
-        } else if (type === 'success') {
-            messageDiv.className = 'success-message';
-        } else {
-            messageDiv.className = 'info-message';
-        }
-
-        messageDiv.innerHTML = message;
-
-        // Clear previous messages
-        messageArea.innerHTML = '';
-        messageArea.appendChild(messageDiv);
-
-        // Auto-hide success/info messages after 5 seconds
-        if (type !== 'error') {
-            setTimeout(() => {
-                if (messageDiv.parentNode) {
-                    messageDiv.parentNode.removeChild(messageDiv);
-                }
-            }, 5000);
+        if (availableVoices.length > 0) {
+            console.log('Available voices:', availableVoices.map(v => `${v.name} (${v.lang})`));
         }
     }
+
+    // Load voices immediately and on change
+    loadVoices();
+    speechSynthesis.onvoiceschanged = loadVoices;
 
     // File upload handling
     document.getElementById('uploadArea').addEventListener('click', function() {
@@ -457,19 +557,19 @@
 
     document.getElementById('csvFile').addEventListener('change', handleFile);
 
-    // Drag & drop handling
+    // Drag & drop
     document.getElementById('uploadArea').addEventListener('dragover', function(e) {
         e.preventDefault();
-        e.target.classList.add('dragover');
+        this.classList.add('dragover');
     });
 
     document.getElementById('uploadArea').addEventListener('dragleave', function(e) {
-        e.target.classList.remove('dragover');
+        this.classList.remove('dragover');
     });
 
     document.getElementById('uploadArea').addEventListener('drop', function(e) {
         e.preventDefault();
-        e.target.classList.remove('dragover');
+        this.classList.remove('dragover');
         const files = e.dataTransfer.files;
         if (files.length > 0) {
             handleFile({target: {files: files}});
@@ -480,81 +580,81 @@
         const file = event.target.files[0];
         if (!file) return;
 
-        showMessage('📂 Loading your CSV file...', 'info');
+        showMessage('📂 Reading CSV file...', 'info', 'uploadMessage');
 
         const reader = new FileReader();
         reader.onload = function(e) {
             parseCSV(e.target.result);
-            showMessage('✅ CSV file loaded successfully!', 'success');
         };
         reader.onerror = function() {
-            showMessage('❌ Error reading file. Please try again.', 'error');
+            showMessage('❌ Error reading file. Please try again.', 'error', 'uploadMessage');
         };
         reader.readAsText(file);
     }
 
     function parseCSV(csvText) {
-        console.log('=== PARSING CSV (3 LANGUAGE VERSION) ===');
-        console.log('Raw CSV content:', csvText);
+        console.log('📊 Parsing CSV...');
 
-        // Handle different line endings
+        // Handle different line endings and filter empty lines
         const lines = csvText.split(/\r?\n|\r/).filter(line => line.trim() !== '');
 
-        console.log('Total lines found:', lines.length);
-
         if (lines.length === 0) {
-            showMessage('❌ CSV file is empty', 'error');
+            showMessage('❌ CSV file is empty', 'error', 'uploadMessage');
             return;
         }
 
         csvData = [];
 
-        // Parse all lines into array of arrays
+        // Parse lines
         lines.forEach(function(line, index) {
-            const parts = line.split(',').map(p => p.trim().replace(/"/g, ''));
-            if (parts.length > 0) {
+            const parts = line.split(',').map(p => p.trim().replace(/^"|"$/g, ''));
+            if (parts.length > 0 && parts.some(p => p.trim() !== '')) {
                 csvData.push(parts);
             }
-            console.log('Line ' + index + ' parsed into ' + parts.length + ' parts:', parts);
         });
 
         if (csvData.length === 0) {
-            showMessage('❌ No valid data found in CSV', 'error');
+            showMessage('❌ No valid data found in CSV', 'error', 'uploadMessage');
             return;
         }
 
-        // Detect column count from first row
-        columnCount = csvData[0].length;
-        console.log('=== DETECTED COLUMN COUNT: ' + columnCount + ' ===');
-        console.log('This version supports up to 3 languages!');
+        // Detect column count
+        columnCount = Math.max(...csvData.map(row => row.length));
+        console.log('📊 Detected', columnCount, 'columns and', csvData.length, 'rows');
 
-        if (columnCount < 2) {
-            showMessage('❌ CSV must have at least 2 columns for language learning', 'error');
+        if (columnCount < 1) {
+            showMessage('❌ CSV must have at least 1 column', 'error', 'uploadMessage');
             return;
         }
 
-        // Show CSV preview
+        showMessage('✅ CSV loaded successfully! ' + csvData.length + ' rows, ' + columnCount + ' columns', 'success', 'uploadMessage');
+
+        // Show preview and configuration
         showCSVPreview();
+        showLanguageConfiguration();
 
-        // Show column configuration
-        showColumnConfiguration();
+        // Update UI
+        document.getElementById('step1').classList.remove('active');
+        document.getElementById('step1').classList.add('completed');
+        document.getElementById('step2').classList.remove('hidden');
+        document.getElementById('step2').classList.add('active');
+        document.getElementById('step3').classList.remove('hidden');
+        document.getElementById('step3').classList.add('active');
     }
 
     function showCSVPreview() {
         const previewDiv = document.getElementById('csvPreview');
-        const tableDiv = document.getElementById('previewTable');
-
         let html = '<table><thead><tr>';
 
-        // Header row with column numbers
+        // Header
         for (let i = 0; i < columnCount; i++) {
             html += '<th>Column ' + (i + 1) + '</th>';
         }
         html += '</tr></thead><tbody>';
 
-        // Show first few rows as preview
-        const previewRows = Math.min(5, csvData.length);
-        for (let i = 0; i < previewRows; i++) {
+        // Data rows (show first 5)
+        const rowsToShow = Math.min(5, csvData.length);
+        for (let i = 0; i < rowsToShow; i++) {
             html += '<tr>';
             for (let j = 0; j < columnCount; j++) {
                 const cellData = csvData[i][j] || '';
@@ -569,201 +669,134 @@
             html += '<p style="text-align: center; color: #666; margin-top: 10px;">... and ' + (csvData.length - 5) + ' more rows</p>';
         }
 
-        tableDiv.innerHTML = html;
-        previewDiv.classList.remove('hidden');
+        previewDiv.innerHTML = html;
     }
 
-    function showColumnConfiguration() {
-        const configDiv = document.getElementById('columnConfig');
-        const mappingsDiv = document.getElementById('columnMappings');
-
+    function showLanguageConfiguration() {
+        const configDiv = document.getElementById('languageConfig');
         let html = '';
 
         for (let i = 0; i < columnCount; i++) {
-            // Get sample data from first few rows for this column
+            // Get sample data from column
             const samples = [];
             for (let j = 0; j < Math.min(3, csvData.length); j++) {
-                if (csvData[j][i]) {
+                if (csvData[j][i] && csvData[j][i].trim() !== '') {
                     samples.push(csvData[j][i]);
                 }
             }
-            const sampleText = samples.join(', ');
+            const sampleText = samples.join(', ') || 'Empty column';
 
-            html += '<div class="column-row">';
+            html += '<div class="config-row">';
             html += '<div class="column-preview">Column ' + (i + 1) + ':<br><small>' + sampleText + '</small></div>';
-            html += '<label><strong>Language:</strong></label>';
-            html += '<select id="lang_' + i + '" onchange="updateLanguageAssignment(' + i + ')">';
+            html += '<select class="voice-select" id="voice_' + i + '">';
 
-            // Add language options with smart defaults
-            Object.keys(languages).forEach(code => {
-                let selected = '';
-                if (i === 0 && code === 'ja-JP') selected = ' selected';
-                else if (i === 1 && code === 'id-ID') selected = ' selected';
-                else if (i === 2 && code === 'en-US') selected = ' selected';
-
-                html += '<option value="' + code + '"' + selected + '>' + languages[code] + '</option>';
+            // Add voice options
+            html += '<option value="">Select a voice...</option>';
+            availableVoices.forEach(voice => {
+                html += '<option value="' + voice.name + '">' + voice.name + ' (' + voice.lang + ')</option>';
             });
 
             html += '</select>';
-            html += '<button onclick="testColumnSpeech(' + i + ')">🔊 Test</button>';
+            html += '<button class="test-btn" onclick="testColumnVoice(' + i + ')">🔊 Test</button>';
             html += '</div>';
         }
 
-        mappingsDiv.innerHTML = html;
-        configDiv.classList.remove('hidden');
+        configDiv.innerHTML = html;
 
-        // Initialize language assignments with better defaults
-        languageAssignments = {};
-        for (let i = 0; i < columnCount; i++) {
-            if (i === 0) languageAssignments[i] = 'ja-JP';
-            else if (i === 1) languageAssignments[i] = 'id-ID';
-            else if (i === 2) languageAssignments[i] = 'en-US';
-            else languageAssignments[i] = 'auto';
-        }
+        // Set default selections for common languages
+        setTimeout(() => {
+            if (availableVoices.length > 0) {
+                for (let i = 0; i < columnCount; i++) {
+                    const select = document.getElementById('voice_' + i);
+                    if (select && availableVoices.length > i) {
+                        // Try to find good default voices
+                        let defaultVoice = null;
 
-        console.log('Initialized language assignments:', languageAssignments);
-    }
+                        if (i === 0) {
+                            // First column - try Japanese
+                            defaultVoice = availableVoices.find(v => v.lang.startsWith('ja'));
+                        } else if (i === 1) {
+                            // Second column - try English
+                            defaultVoice = availableVoices.find(v => v.lang.startsWith('en'));
+                        }
 
-    function updateLanguageAssignment(columnIndex) {
-        const selectElement = document.getElementById('lang_' + columnIndex);
-        languageAssignments[columnIndex] = selectElement.value;
-        console.log('Updated column ' + columnIndex + ' to language:', selectElement.value);
-    }
+                        if (!defaultVoice) {
+                            defaultVoice = availableVoices[i % availableVoices.length];
+                        }
 
-    function testColumnSpeech(columnIndex) {
-        if (csvData.length === 0) return;
-
-        const sampleText = csvData[0][columnIndex];
-        const languageCode = languageAssignments[columnIndex];
-
-        if (sampleText) {
-            // Use the enhanced speakAsync function for testing
-            console.log('🔊 Testing column', columnIndex, 'with text:', sampleText, 'language:', languageCode);
-
-            // Create utterance with explicit properties like in the article
-            const utterance = new SpeechSynthesisUtterance();
-            utterance.text = sampleText;
-            utterance.lang = languageCode;
-            utterance.rate = parseFloat(document.getElementById('speechRate').value);
-
-            // Use the improved voice selection
-            if (voicesLoaded && availableVoices.length > 0) {
-                let bestVoice = availableVoices.find(voice => voice.lang === languageCode) ||
-                    availableVoices.find(voice => voice.lang.startsWith(languageCode.split('-')[0]));
-
-                // iOS-specific voice matching
-                if (!bestVoice && /iPad|iPhone|iPod/.test(navigator.userAgent)) {
-                    if (languageCode.startsWith('ja')) {
-                        bestVoice = availableVoices.find(voice =>
-                            voice.name.toLowerCase().includes('kyoko') ||
-                            voice.name.toLowerCase().includes('japanese') ||
-                            voice.name.includes('日本語')
-                        );
+                        if (defaultVoice) {
+                            select.value = defaultVoice.name;
+                        }
                     }
                 }
-
-                if (bestVoice) {
-                    utterance.voice = bestVoice;
-                    console.log('🎤 Test using voice:', bestVoice.name, '(' + bestVoice.lang + ')');
-                }
             }
+        }, 100);
+    }
 
+    function testColumnVoice(columnIndex) {
+        const voiceSelect = document.getElementById('voice_' + columnIndex);
+        const selectedVoiceName = voiceSelect.value;
+
+        if (!selectedVoiceName) {
+            alert('Please select a voice first');
+            return;
+        }
+
+        // Get sample text
+        const sampleText = csvData[0] && csvData[0][columnIndex] ? csvData[0][columnIndex] : 'Test voice';
+
+        // Find the voice
+        const voice = availableVoices.find(v => v.name === selectedVoiceName);
+
+        if (voice) {
+            const utterance = new SpeechSynthesisUtterance(sampleText);
+            utterance.voice = voice;
+            utterance.rate = 0.8;
             speechSynthesis.speak(utterance);
+            console.log('🔊 Testing:', voice.name, '(' + voice.lang + ') with text:', sampleText);
         }
-    }
-
-    function startConfiguration() {
-        console.log('🚀 STARTING CONFIGURATION (3 LANGUAGE VERSION)');
-
-        // Update language assignments from dropdowns first
-        for (let i = 0; i < columnCount; i++) {
-            const selectElement = document.getElementById('lang_' + i);
-            if (selectElement) {
-                languageAssignments[i] = selectElement.value;
-            }
-        }
-
-        console.log('Final language assignments:', languageAssignments);
-        console.log('Column count:', columnCount);
-
-        // Validate that languages are assigned
-        for (let i = 0; i < columnCount; i++) {
-            if (!languageAssignments[i]) {
-                showMessage('❌ Please assign a language to column ' + (i + 1), 'error');
-                return;
-            }
-        }
-
-        // Create word pairs using up to 3 columns (hardcoded)
-        wordPairs = [];
-
-        csvData.forEach(function(row, index) {
-            if (row[0] && row[1]) {
-                const wordPair = {
-                    word1: row[0],
-                    word2: row[1],
-                    lang1: languageAssignments[0],
-                    lang2: languageAssignments[1]
-                };
-
-                // Add third column if available
-                if (columnCount >= 3 && row[2] && row[2].trim() !== '') {
-                    wordPair.word3 = row[2];
-                    wordPair.lang3 = languageAssignments[2];
-                }
-
-                wordPairs.push(wordPair);
-                console.log('Created word pair:', wordPair);
-            }
-        });
-
-        console.log('Total word pairs created:', wordPairs.length);
-
-        if (wordPairs.length > 0) {
-            initializeLearning();
-            const langCount = columnCount >= 3 ? 3 : 2;
-            showMessage('✅ Configuration complete! Ready to start learning with ' + wordPairs.length + ' word sets across ' + langCount + ' languages.', 'success');
-        } else {
-            showMessage('❌ No valid word pairs found in the first columns.', 'error');
-        }
-    }
-
-    function speak(text, languageCode) {
-        const utterance = new SpeechSynthesisUtterance(text);
-        const rate = parseFloat(document.getElementById('speechRate').value);
-
-        utterance.rate = rate;
-
-        if (languageCode && languageCode !== 'auto') {
-            utterance.lang = languageCode;
-        }
-
-        speechSynthesis.speak(utterance);
-    }
-
-    function initializeLearning() {
-        // Hide configuration panels and messages
-        document.getElementById('columnConfig').classList.add('hidden');
-        document.getElementById('csvPreview').classList.add('hidden');
-        document.getElementById('messageArea').innerHTML = '';
-
-        // Show learning interface
-        document.getElementById('settingsPanel').classList.remove('hidden');
-        document.getElementById('controls').classList.remove('hidden');
-        document.getElementById('progressContainer').classList.remove('hidden');
-        document.getElementById('wordDisplay').classList.remove('hidden');
-        document.getElementById('stats').classList.remove('hidden');
-        document.getElementById('wordList').classList.remove('hidden');
-
-        currentIndex = 0;
-        updateDisplay();
-        updateWordList();
-        updateStats();
     }
 
     function startLearning() {
-        if (wordPairs.length === 0) {
-            showMessage('❌ Please configure your CSV file first!', 'error');
+        // Validate configuration
+        languageConfig = {};
+        let allConfigured = true;
+
+        for (let i = 0; i < columnCount; i++) {
+            const voiceSelect = document.getElementById('voice_' + i);
+            if (!voiceSelect.value) {
+                alert('Please select a voice for Column ' + (i + 1));
+                return;
+            }
+
+            const voice = availableVoices.find(v => v.name === voiceSelect.value);
+            if (voice) {
+                languageConfig[i] = voice;
+            }
+        }
+
+        console.log('🚀 Language configuration:', languageConfig);
+
+        // Initialize learning interface
+        document.getElementById('step2').classList.add('hidden');
+        document.getElementById('step3').classList.remove('active');
+        document.getElementById('step3').classList.add('completed');
+        document.getElementById('step4').classList.remove('hidden');
+        document.getElementById('step4').classList.add('active');
+
+        // Reset state
+        currentRowIndex = 0;
+        currentColumnIndex = 0;
+        updateDisplay();
+        updateStats();
+        updateWordList();
+
+        showMessage('✅ Ready to start learning! ' + csvData.length + ' rows with ' + Object.keys(languageConfig).length + ' languages configured.', 'success', 'learningMessage');
+    }
+
+    function startPlayback() {
+        if (csvData.length === 0) {
+            alert('No data to play');
             return;
         }
 
@@ -771,136 +804,107 @@
         isPaused = false;
         updateButtons();
 
-        playCurrentPair();
+        playCurrentSequence();
     }
 
-    function playCurrentPair() {
+    function playCurrentSequence() {
         if (!isPlaying || isPaused) return;
 
-        const pair = wordPairs[currentIndex];
-        if (!pair) return;
+        const row = csvData[currentRowIndex];
+        if (!row) {
+            // End of data
+            stopPlayback();
+            alert('🎉 Completed all rows!');
+            return;
+        }
 
-        console.log('🎵 Playing word set:', pair);
+        if (currentColumnIndex >= columnCount || currentColumnIndex >= Object.keys(languageConfig).length) {
+            // End of current row, move to next
+            currentColumnIndex = 0;
+            currentRowIndex++;
 
-        updateDisplay();
-        updateProgress();
-        updateStats();
-        updateWordList();
-
-        // Add longer pause for mobile voice switching
-        const mobilePause = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ? 800 : 500;
-
-        // Speak first word
-        speakAsync(pair.word1, pair.lang1).then(function() {
-            if (!isPlaying || isPaused) return;
-            console.log('✓ Finished word 1');
-
-            // Longer pause for mobile
-            return sleep(mobilePause);
-        }).then(function() {
-            if (!isPlaying || isPaused) return;
-
-            // Speak second word
-            return speakAsync(pair.word2, pair.lang2);
-        }).then(function() {
-            if (!isPlaying || isPaused) return;
-            console.log('✓ Finished word 2');
-
-            // Longer pause for mobile
-            return sleep(mobilePause);
-        }).then(function() {
-            if (!isPlaying || isPaused) return;
-
-            // Speak third word if it exists
-            if (pair.word3) {
-                console.log('🎵 Speaking word 3:', pair.word3);
-                return speakAsync(pair.word3, pair.lang3);
-            } else {
-                console.log('⏭️ No word 3, skipping');
-                return Promise.resolve(); // Skip if no third word
-            }
-        }).then(function() {
-            if (!isPlaying || isPaused) return;
-            if (pair.word3) {
-                console.log('✓ Finished word 3');
+            if (repeatMode && currentRowIndex >= csvData.length) {
+                currentRowIndex = 0; // Loop back
             }
 
-            // Longer pause between word pairs
+            // Pause between rows
             const pauseTime = parseInt(document.getElementById('pauseTime').value);
-            return sleep(pauseTime);
-        }).then(function() {
-            if (!isPlaying || isPaused) return;
-
-            // Move to next word
-            if (repeatMode) {
-                playCurrentPair();
-            } else {
-                currentIndex++;
-                if (currentIndex >= wordPairs.length) {
-                    showMessage('🎉 Congratulations! You have completed all words!', 'success');
-                    stopLearning();
-                } else {
-                    playCurrentPair();
+            setTimeout(() => {
+                if (isPlaying && !isPaused) {
+                    playCurrentSequence();
                 }
-            }
-        });
-    }
+            }, pauseTime);
+            return;
+        }
 
-    function speakAsync(text, languageCode) {
-        return new Promise(function(resolve) {
+        // Play current cell
+        const text = row[currentColumnIndex] || '';
+        const voice = languageConfig[currentColumnIndex];
+
+        if (text && voice) {
+            updateDisplay();
+            updateStats();
+            updateWordList();
+
             const utterance = new SpeechSynthesisUtterance(text);
-            const rate = parseFloat(document.getElementById('speechRate').value);
+            utterance.voice = voice;
+            utterance.rate = parseFloat(document.getElementById('speechRate').value);
 
-            utterance.rate = rate;
-            utterance.onend = resolve;
-            utterance.onerror = resolve;
-
-            if (languageCode && languageCode !== 'auto') {
-                utterance.lang = languageCode;
-            }
+            utterance.onend = function() {
+                currentColumnIndex++;
+                setTimeout(() => {
+                    if (isPlaying && !isPaused) {
+                        playCurrentSequence();
+                    }
+                }, 800); // Short pause between words
+            };
 
             speechSynthesis.speak(utterance);
-        });
+            console.log('🔊 Playing:', text, 'with voice:', voice.name);
+        } else {
+            // Skip empty cells
+            currentColumnIndex++;
+            setTimeout(() => {
+                if (isPlaying && !isPaused) {
+                    playCurrentSequence();
+                }
+            }, 100);
+        }
     }
 
-    function sleep(ms) {
-        return new Promise(function(resolve) {
-            setTimeout(resolve, ms);
-        });
-    }
-
-    function pauseLearning() {
+    function pausePlayback() {
         isPaused = true;
-        speechSynthesis.cancel();
+        speechSynthesis.pause();
         updateButtons();
     }
 
-    function stopLearning() {
+    function stopPlayback() {
         isPlaying = false;
         isPaused = false;
         speechSynthesis.cancel();
-        currentIndex = 0;
+        currentRowIndex = 0;
+        currentColumnIndex = 0;
         updateDisplay();
-        updateButtons();
-        updateProgress();
         updateStats();
+        updateWordList();
+        updateButtons();
     }
 
-    function nextWord() {
-        if (currentIndex < wordPairs.length - 1) {
-            currentIndex++;
+    function nextRow() {
+        if (currentRowIndex < csvData.length - 1) {
+            currentRowIndex++;
+            currentColumnIndex = 0;
             updateDisplay();
-            updateProgress();
             updateStats();
             updateWordList();
         }
     }
 
-    function previousWord() {
-        if (currentIndex > 0) {
-            currentIndex--;
+    function previousRow() {
+        if (currentRowIndex > 0) {
+            currentRowIndex--;
+            currentColumnIndex = 0;
             updateDisplay();
-            updateProgress();
             updateStats();
             updateWordList();
         }
@@ -908,90 +912,134 @@
 
     function toggleRepeat() {
         repeatMode = !repeatMode;
-        const btn = document.getElementById('repeatBtn');
-        btn.textContent = '🔁 Repeat: ' + (repeatMode ? 'ON' : 'OFF');
+        document.getElementById('repeatBtn').textContent = '🔁 Repeat: ' + (repeatMode ? 'ON' : 'OFF');
     }
 
     function updateDisplay() {
-        if (wordPairs.length === 0) return;
+        if (csvData.length === 0) return;
 
-        const pair = wordPairs[currentIndex];
+        const row = csvData[currentRowIndex];
+        if (!row) return;
 
-        console.log('📺 Updating display with:', pair);
+        // Update row number
+        document.getElementById('currentRowNumber').textContent = currentRowIndex + 1;
 
-        // Always show first 2 words
-        document.getElementById('currentWord1').textContent = pair.word1 || '';
-        document.getElementById('currentWord2').textContent = pair.word2 || '';
+        // Create word stack display - show ALL words from current row
+        const stackDiv = document.getElementById('wordStack');
+        stackDiv.innerHTML = '';
 
-        // Show or hide third word based on availability
-        const word3Element = document.getElementById('currentWord3');
-        if (pair.word3) {
-            word3Element.textContent = pair.word3;
-            word3Element.style.display = 'block';
-            console.log('✓ Showing 3rd word:', pair.word3);
+        // Get all configured columns for this row
+        const configuredColumns = Object.keys(languageConfig).map(i => parseInt(i)).sort((a, b) => a - b);
+
+        configuredColumns.forEach((columnIndex, displayIndex) => {
+            const wordDiv = document.createElement('div');
+
+            // Assign size classes based on position
+            let sizeClass = 'fifth-plus'; // default for 5+
+            if (displayIndex === 0) sizeClass = 'first';
+            else if (displayIndex === 1) sizeClass = 'second';
+            else if (displayIndex === 2) sizeClass = 'third';
+            else if (displayIndex === 3) sizeClass = 'fourth';
+
+            // Add active class if currently playing
+            const isActive = columnIndex === currentColumnIndex;
+            wordDiv.className = `word-item ${sizeClass}${isActive ? ' active' : ''}`;
+
+            const word = row[columnIndex] || 'Empty';
+            const voice = languageConfig[columnIndex];
+
+            wordDiv.innerHTML = `
+                    <div class="word-content">
+                        <span class="word-text">${word}</span>
+                        <div class="word-language">${voice.name} (${voice.lang})</div>
+                    </div>
+                `;
+
+            stackDiv.appendChild(wordDiv);
+        });
+
+        // Update status message
+        if (isPlaying && !isPaused) {
+            const currentVoice = languageConfig[currentColumnIndex];
+            const status = currentVoice ? `🔊 Playing: ${currentVoice.name}` : 'Playing...';
+            document.getElementById('currentLanguage').textContent = status;
         } else {
-            word3Element.style.display = 'none';
-            console.log('✗ Hiding 3rd word (not available)');
+            document.getElementById('currentLanguage').textContent = `Row ${currentRowIndex + 1} of ${csvData.length}`;
         }
-    }
 
-    function updateProgress() {
-        const progress = wordPairs.length > 0 ? ((currentIndex + 1) / wordPairs.length) * 100 : 0;
+        // Update progress
+        const progress = csvData.length > 0 ? ((currentRowIndex + 1) / csvData.length) * 100 : 0;
         document.getElementById('progressBar').style.width = progress + '%';
     }
 
     function updateStats() {
-        document.getElementById('totalWords').textContent = wordPairs.length;
-        document.getElementById('currentIndex').textContent = currentIndex + 1;
-        document.getElementById('wordsRemaining').textContent = wordPairs.length - currentIndex - 1;
+        document.getElementById('totalRows').textContent = csvData.length;
+        document.getElementById('currentRow').textContent = currentRowIndex + 1;
+        document.getElementById('remainingRows').textContent = csvData.length - currentRowIndex - 1;
     }
 
     function updateWordList() {
         const listDiv = document.getElementById('wordList');
         listDiv.innerHTML = '';
 
-        wordPairs.forEach(function(pair, index) {
+        csvData.forEach((row, index) => {
             const item = document.createElement('div');
-            item.className = 'word-item' + (index === currentIndex ? ' current' : '');
+            item.className = 'word-item-list' + (index === currentRowIndex ? ' current' : '');
 
-            let displayText = '<strong>' + pair.word1 + '</strong> → ' + pair.word2;
-            if (pair.word3) {
-                displayText += ' → ' + pair.word3;
-                console.log('📝 Word list showing 3 words for item', index);
+            let displayText = `Row ${index + 1}: `;
+            const words = [];
+            for (let i = 0; i < columnCount; i++) {
+                if (row[i]) words.push(row[i]);
             }
+            displayText += words.join(' → ');
 
-            item.innerHTML = displayText;
+            item.textContent = displayText;
             item.onclick = function() {
-                currentIndex = index;
+                currentRowIndex = index;
+                currentColumnIndex = 0;
                 updateDisplay();
-                updateProgress();
                 updateStats();
                 updateWordList();
             };
+
             listDiv.appendChild(item);
         });
     }
 
     function updateButtons() {
-        document.getElementById('startBtn').disabled = isPlaying && !isPaused;
+        document.getElementById('playBtn').disabled = isPlaying && !isPaused;
         document.getElementById('pauseBtn').disabled = !isPlaying || isPaused;
-        document.getElementById('stopBtn').disabled = !isPlaying;
-        document.getElementById('nextBtn').disabled = wordPairs.length === 0;
-        document.getElementById('prevBtn').disabled = wordPairs.length === 0;
+        document.getElementById('stopBtn').disabled = !isPlaying && !isPaused;
+        document.getElementById('nextBtn').disabled = csvData.length === 0;
+        document.getElementById('prevBtn').disabled = csvData.length === 0;
     }
 
-    // Update rate display
+    function showMessage(message, type, containerId) {
+        const container = document.getElementById(containerId);
+        if (container) {
+            container.innerHTML = `<div class="message ${type}">${message}</div>`;
+
+            if (type !== 'error') {
+                setTimeout(() => {
+                    container.innerHTML = '';
+                }, 3000);
+            }
+        }
+    }
+
+    // Settings updates
     document.getElementById('speechRate').addEventListener('input', function() {
         document.getElementById('rateDisplay').textContent = this.value + 'x';
     });
 
     // Check TTS support
     if (!('speechSynthesis' in window)) {
-        showMessage('❌ Speech Synthesis not supported in this browser. Please use Chrome, Safari, or Firefox.', 'error');
+        showMessage('❌ Speech Synthesis not supported in this browser. Please use Chrome, Safari, or Firefox.', 'error', 'uploadMessage');
+    } else {
+        console.log('✅ Speech Synthesis supported');
     }
 
-    console.log('🌍 Multi-Language TTS Learning Tool Ready! (3 Language Version with Example CSV)');
-    console.log('📝 Upload CSV with up to 3 language columns or load example.csv');
+    console.log('🚀 Multi-Language Voice Learning App Ready!');
 </script>
 </body>
 </html>
