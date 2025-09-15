@@ -193,57 +193,71 @@
             margin-bottom: 20px;
             font-weight: bold;
         }
+
         .word-stack {
-            display: block !important;
-            text-align: center !important;
-            width: 100% !important;
-            margin: 20px auto !important;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            margin: 20px auto;
+            gap: 15px;
+            padding: 0 10px;
+            box-sizing: border-box;
         }
 
         .word-item {
-            display: block !important;
-            text-align: center !important;
-            padding: 15px 20px !important;
-            background: rgba(255,255,255,0.1) !important;
-            border-radius: 10px !important;
-            transition: all 0.3s ease !important;
-            width: 400px !important;
-            margin: 15px auto !important;
-            max-width: 90vw !important;
+            display: flex;
+            flex-direction: column; /* allow word + subtext to stack */
+            justify-content: center; /* vertical centering */
+            align-items: center;     /* horizontal centering */
+            text-align: center;
+            padding: 1em;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            width: 100%;
+            max-width: 600px; /* flexible cap for desktop */
+            min-height: 80px; /* keep some height so it's not squished */
+            box-sizing: border-box;
+            word-break: break-word;
+            overflow-wrap: anywhere;
         }
 
+        /* Responsive text scaling */
         .word-item.first {
-            font-size: 2.5em;
+            font-size: clamp(1.5rem, 6vw, 2.8rem);
             font-weight: bold;
-            padding: 25px 30px;
-            background: rgba(255,255,255,0.15);
+            background: rgba(255, 255, 255, 0.15);
         }
+
         .word-item.second {
-            font-size: 2em;
+            font-size: clamp(1.3rem, 5vw, 2.2rem);
             font-weight: 600;
-            padding: 20px 25px;
         }
+
         .word-item.third {
-            font-size: 1.7em;
+            font-size: clamp(1.1rem, 4.5vw, 1.8rem);
             font-weight: 500;
-            padding: 18px 22px;
         }
+
         .word-item.fourth {
-            font-size: 1.4em;
+            font-size: clamp(1rem, 4vw, 1.5rem);
             font-weight: 400;
-            padding: 15px 20px;
         }
+
         .word-item.fifth-plus {
-            font-size: 1.2em;
+            font-size: clamp(0.9rem, 3.5vw, 1.2rem);
             font-weight: 300;
-            padding: 12px 18px;
         }
+
         .word-item.active {
-            background: rgba(255,255,255,0.25);
+            background: rgba(255, 255, 255, 0.25);
             transform: scale(1.05);
-            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-            border: 2px solid rgba(255,255,255,0.5);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.5);
         }
+
         .word-content {
             flex: 1;
         }
