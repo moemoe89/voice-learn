@@ -933,6 +933,7 @@
         stackDiv.style.textAlign = 'center';
         stackDiv.style.width = '100%';
         stackDiv.style.display = 'block';
+        stackDiv.style.overflowX = 'hidden'; // Prevent horizontal scroll
 
         // Get all configured columns for this row
         const configuredColumns = Object.keys(languageConfig).map(i => parseInt(i)).sort((a, b) => a - b);
@@ -951,12 +952,14 @@
             const isActive = columnIndex === currentColumnIndex;
             wordDiv.className = `word-item ${sizeClass}${isActive ? ' active' : ''}`;
 
-            // FORCE CENTERING WITH INLINE STYLES
+            // FLUID CENTERING - let CSS handle all the sizing
             wordDiv.style.display = 'block';
-            wordDiv.style.margin = '15px auto';
+            wordDiv.style.margin = 'max(8px, 1.5vw) auto';
             wordDiv.style.textAlign = 'center';
-            wordDiv.style.width = '400px';
-            wordDiv.style.maxWidth = '90vw';
+            wordDiv.style.width = 'clamp(280px, 75vw, 400px)'; // Fluid width
+            wordDiv.style.boxSizing = 'border-box';
+            wordDiv.style.overflowWrap = 'break-word';
+            wordDiv.style.wordWrap = 'break-word';
 
             const word = row[columnIndex] || 'Empty';
             const voice = languageConfig[columnIndex];
@@ -969,8 +972,6 @@
                 `;
 
             stackDiv.appendChild(wordDiv);
-
-            console.log('Added word item:', wordDiv.style.margin, wordDiv.style.width);
         });
 
         // Update status message
