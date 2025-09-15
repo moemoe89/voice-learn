@@ -94,12 +94,72 @@
             font-family: monospace;
             font-size: 14px;
         }
-        .voice-select {
+        .voice-select-container {
+            position: relative;
             flex: 1;
+        }
+
+        .voice-search {
+            width: 100%;
             padding: 8px 12px;
             border-radius: 5px;
             border: 1px solid #ddd;
             font-size: 14px;
+            background: white;
+            box-sizing: border-box;
+        }
+
+        .voice-search:focus {
+            border-color: #007cba;
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 124, 186, 0.3);
+        }
+
+        .voice-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .voice-dropdown.show {
+            display: block;
+        }
+
+        .voice-option {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+
+        .voice-option:hover {
+            background-color: #f0f8ff;
+        }
+
+        .voice-option.selected {
+            background-color: #e3f2fd;
+            font-weight: bold;
+        }
+
+        .voice-option:last-child {
+            border-bottom: none;
+        }
+
+        .no-results {
+            padding: 12px;
+            text-align: center;
+            color: #666;
+            font-style: italic;
         }
         .test-btn {
             background: #28a745;
@@ -134,25 +194,24 @@
             font-weight: bold;
         }
         .word-stack {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            margin: 20px 0;
-            text-align: center; /* Ensure all content is centered */
+            display: block !important;
+            text-align: center !important;
+            width: 100% !important;
+            margin: 20px auto !important;
         }
+
         .word-item {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 15px 20px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 10px;
-            transition: all 0.3s ease;
-            width: 90%;
-            max-width: 500px;
+            display: block !important;
+            text-align: center !important;
+            padding: 15px 20px !important;
+            background: rgba(255,255,255,0.1) !important;
+            border-radius: 10px !important;
+            transition: all 0.3s ease !important;
+            width: 400px !important;
+            margin: 15px auto !important;
+            max-width: 90vw !important;
         }
+
         .word-item.first {
             font-size: 2.5em;
             font-weight: bold;
@@ -388,7 +447,7 @@
     <div class="step active" id="step1">
         <h2>📄 Step 1: Load CSV File</h2>
 
-        <!-- LOAD BUTTONS - SHOULD BE VISIBLE NOW -->
+        <!-- LOAD BUTTONS -->
         <div class="load-buttons">
             <button class="load-btn" onclick="loadExampleCSV()">
                 📋 Load Example CSV
@@ -419,7 +478,7 @@
     <!-- Step 3: Language Configuration -->
     <div class="step hidden" id="step3">
         <h2>🎯 Step 3: Configure Languages for Each Column</h2>
-        <p>Select the voice/language for each column, then start learning:</p>
+        <p>Search and select the voice/language for each column, then start learning:</p>
         <div id="languageConfig"></div>
         <div style="text-align: center; margin-top: 25px;">
             <button class="primary" onclick="startLearning()" id="startLearningBtn">🚀 Start Learning</button>
@@ -689,54 +748,153 @@
 
             html += '<div class="config-row">';
             html += '<div class="column-preview">Column ' + (i + 1) + ':<br><small>' + sampleText + '</small></div>';
-            html += '<select class="voice-select" id="voice_' + i + '">';
 
-            // Add voice options
-            html += '<option value="">Select a voice...</option>';
-            availableVoices.forEach(voice => {
-                html += '<option value="' + voice.name + '">' + voice.name + ' (' + voice.lang + ')</option>';
-            });
+            // Create searchable voice selector
+            html += '<div class="voice-select-container">';
+            html += '<input type="text" class="voice-search" id="voice_search_' + i + '" placeholder="Search voices..." onfocus="showVoiceDropdown(' + i + ')" oninput="filterVoices(' + i + ')">';
+            html += '<div class="voice-dropdown" id="voice_dropdown_' + i + '"></div>';
+            html += '</div>';
 
-            html += '</select>';
             html += '<button class="test-btn" onclick="testColumnVoice(' + i + ')">🔊 Test</button>';
             html += '</div>';
         }
 
         configDiv.innerHTML = html;
 
-        // Set default selections for common languages
+        // Initialize voice dropdowns
         setTimeout(() => {
-            if (availableVoices.length > 0) {
+            for (let i = 0; i < columnCount; i++) {
+                populateVoiceDropdown(i);
+                setDefaultVoice(i);
+            }
+
+            // Add click outside listener to close dropdowns
+            document.addEventListener('click', function(e) {
                 for (let i = 0; i < columnCount; i++) {
-                    const select = document.getElementById('voice_' + i);
-                    if (select && availableVoices.length > i) {
-                        // Try to find good default voices
-                        let defaultVoice = null;
-
-                        if (i === 0) {
-                            // First column - try Japanese
-                            defaultVoice = availableVoices.find(v => v.lang.startsWith('ja'));
-                        } else if (i === 1) {
-                            // Second column - try English
-                            defaultVoice = availableVoices.find(v => v.lang.startsWith('en'));
-                        }
-
-                        if (!defaultVoice) {
-                            defaultVoice = availableVoices[i % availableVoices.length];
-                        }
-
-                        if (defaultVoice) {
-                            select.value = defaultVoice.name;
-                        }
+                    const dropdown = document.getElementById('voice_dropdown_' + i);
+                    const searchInput = document.getElementById('voice_search_' + i);
+                    if (dropdown && searchInput && !searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+                        dropdown.classList.remove('show');
                     }
                 }
-            }
+            });
         }, 100);
     }
 
+    function populateVoiceDropdown(columnIndex) {
+        const dropdown = document.getElementById('voice_dropdown_' + columnIndex);
+        if (!dropdown) return;
+
+        let html = '';
+
+        // Add "Select a voice" option
+        html += '<div class="voice-option" onclick="selectVoice(' + columnIndex + ', \'\', \'Select a voice...\')">Select a voice...</div>';
+
+        // Add all available voices
+        availableVoices.forEach(voice => {
+            const displayText = voice.name + ' (' + voice.lang + ')';
+            html += '<div class="voice-option" onclick="selectVoice(' + columnIndex + ', \'' + voice.name.replace(/'/g, "\\'") + '\', \'' + displayText.replace(/'/g, "\\'") + '\')">' + displayText + '</div>';
+        });
+
+        dropdown.innerHTML = html;
+    }
+
+    function showVoiceDropdown(columnIndex) {
+        // Hide all other dropdowns first
+        for (let i = 0; i < columnCount; i++) {
+            if (i !== columnIndex) {
+                const otherDropdown = document.getElementById('voice_dropdown_' + i);
+                if (otherDropdown) {
+                    otherDropdown.classList.remove('show');
+                }
+            }
+        }
+
+        // Show current dropdown
+        const dropdown = document.getElementById('voice_dropdown_' + columnIndex);
+        if (dropdown) {
+            dropdown.classList.add('show');
+            filterVoices(columnIndex); // Apply any current filter
+        }
+    }
+
+    function filterVoices(columnIndex) {
+        const searchInput = document.getElementById('voice_search_' + columnIndex);
+        const dropdown = document.getElementById('voice_dropdown_' + columnIndex);
+
+        if (!searchInput || !dropdown) return;
+
+        const searchTerm = searchInput.value.toLowerCase();
+        let html = '';
+        let hasResults = false;
+
+        // Add "Select a voice" option if no search term
+        if (!searchTerm) {
+            html += '<div class="voice-option" onclick="selectVoice(' + columnIndex + ', \'\', \'Select a voice...\')">Select a voice...</div>';
+            hasResults = true;
+        }
+
+        // Filter and add matching voices
+        availableVoices.forEach(voice => {
+            const displayText = voice.name + ' (' + voice.lang + ')';
+            if (displayText.toLowerCase().includes(searchTerm)) {
+                html += '<div class="voice-option" onclick="selectVoice(' + columnIndex + ', \'' + voice.name.replace(/'/g, "\\'") + '\', \'' + displayText.replace(/'/g, "\\'") + '\')">' + displayText + '</div>';
+                hasResults = true;
+            }
+        });
+
+        // Show "no results" if no matches
+        if (!hasResults) {
+            html += '<div class="no-results">No voices found matching "' + searchTerm + '"</div>';
+        }
+
+        dropdown.innerHTML = html;
+        dropdown.classList.add('show');
+    }
+
+    function selectVoice(columnIndex, voiceName, displayText) {
+        const searchInput = document.getElementById('voice_search_' + columnIndex);
+        const dropdown = document.getElementById('voice_dropdown_' + columnIndex);
+
+        if (searchInput) {
+            searchInput.value = displayText;
+            searchInput.setAttribute('data-voice-name', voiceName);
+        }
+
+        if (dropdown) {
+            dropdown.classList.remove('show');
+        }
+
+        console.log('Selected voice for column ' + columnIndex + ':', voiceName);
+    }
+
+    function setDefaultVoice(columnIndex) {
+        if (availableVoices.length === 0) return;
+
+        let defaultVoice = null;
+
+        // Try to find good default voices
+        if (columnIndex === 0) {
+            // First column - try Japanese
+            defaultVoice = availableVoices.find(v => v.lang.startsWith('ja'));
+        } else if (columnIndex === 1) {
+            // Second column - try English
+            defaultVoice = availableVoices.find(v => v.lang.startsWith('en'));
+        }
+
+        if (!defaultVoice) {
+            defaultVoice = availableVoices[columnIndex % availableVoices.length];
+        }
+
+        if (defaultVoice) {
+            const displayText = defaultVoice.name + ' (' + defaultVoice.lang + ')';
+            selectVoice(columnIndex, defaultVoice.name, displayText);
+        }
+    }
+
     function testColumnVoice(columnIndex) {
-        const voiceSelect = document.getElementById('voice_' + columnIndex);
-        const selectedVoiceName = voiceSelect.value;
+        const searchInput = document.getElementById('voice_search_' + columnIndex);
+        const selectedVoiceName = searchInput ? searchInput.getAttribute('data-voice-name') : '';
 
         if (!selectedVoiceName) {
             alert('Please select a voice first');
@@ -761,16 +919,17 @@
     function startLearning() {
         // Validate configuration
         languageConfig = {};
-        let allConfigured = true;
 
         for (let i = 0; i < columnCount; i++) {
-            const voiceSelect = document.getElementById('voice_' + i);
-            if (!voiceSelect.value) {
+            const searchInput = document.getElementById('voice_search_' + i);
+            const selectedVoiceName = searchInput ? searchInput.getAttribute('data-voice-name') : '';
+
+            if (!selectedVoiceName) {
                 alert('Please select a voice for Column ' + (i + 1));
                 return;
             }
 
-            const voice = availableVoices.find(v => v.name === voiceSelect.value);
+            const voice = availableVoices.find(v => v.name === selectedVoiceName);
             if (voice) {
                 languageConfig[i] = voice;
             }
@@ -952,14 +1111,12 @@
             const isActive = columnIndex === currentColumnIndex;
             wordDiv.className = `word-item ${sizeClass}${isActive ? ' active' : ''}`;
 
-            // FLUID CENTERING - let CSS handle all the sizing
+            // FORCE CENTERING WITH INLINE STYLES
             wordDiv.style.display = 'block';
-            wordDiv.style.margin = 'max(8px, 1.5vw) auto';
+            wordDiv.style.margin = '15px auto';
             wordDiv.style.textAlign = 'center';
-            wordDiv.style.width = 'clamp(280px, 75vw, 400px)'; // Fluid width
-            wordDiv.style.boxSizing = 'border-box';
-            wordDiv.style.overflowWrap = 'break-word';
-            wordDiv.style.wordWrap = 'break-word';
+            wordDiv.style.width = '400px';
+            wordDiv.style.maxWidth = '90vw';
 
             const word = row[columnIndex] || 'Empty';
             const voice = languageConfig[columnIndex];
